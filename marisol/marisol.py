@@ -116,10 +116,10 @@ class Document(object):
     def save(self):
         with open("out.pdf", "wb") as out_file:
             writer = PdfFileWriter()
-            for page in self.reader.pages:
-                p = Page(page)
-                p.apply()
-                writer.addPage(p.page)
+            for page in self:
+                print(type(page.page))
+                page.apply()
+                writer.addPage(page.page)
             writer.write(out_file)
 
 
@@ -133,25 +133,21 @@ class Page(object):
         self.height = self.page.mediaBox.upperRight[1]
         self.width = self.page.mediaBox.lowerRight[0]
 
-        #self.overlay = Overlay(self.page_size()[0])
-
     def __str__(self):
-        return "{prefix}{number}".format(prefix=self.prefix,
-                                         number=str(self.start).zfill(self.fill))
+        return self.number
 
     def apply(self):
-        with open("temp.pdf", "rb") as temp_file:
-            overlay_pdf = PdfFileReader(temp_file)
-            overlay_page = overlay_pdf.getPage(0)
-
-            # read your existing PDF
-            self.page.mergePage(overlay_page)
+        overlay = Overlay(self.size, self.number)
+        self.page.mergePage(overlay.page())
 
     @property
     def number(self):
-        return "{}{}".format(self.prefix, str(self.start).zfill(self.fill))
+        num = str(self.start)
+        num = num.zfill(self.fill)
+        return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
-    def page_size(self):
+    @property
+    def size(self):
         dims = (float(self.width), float(self.height))
         for name in dir(pagesizes):
             size = getattr(pagesizes, name)
@@ -164,20 +160,21 @@ class Page(object):
 
 class Overlay(object):
 
-    def __init__(self, size):
-        # self.output = io.BytesIO()
-        self.output = open("temp.pdf", "wb")
-        self.c = canvas.Canvas("temp.pdf", pagesize=pagesizes.letter)
-        self.add_bates()
+    def __init__(self, size, text):
+        self.size_name, self.size = size
+        self.text = text
+
+        self.output = io.BytesIO()
+        self.c = canvas.Canvas(self.output, pagesize=self.size)
+        offset_right = 15 # initial offset
+        offset_right += len(text)*7  # offset for text length
+        self.c.drawString(self.size[0]-offset_right, 15, self.text)
+        self.c.showPage()
         self.c.save()
 
-    def add_bates(self):
-        self.c.drawString(10, 100, "Hello world")
-
-    def save(self):
-        self.c.save()
-
-    def file(self):
-        pass
+    def page(self):
+        self.output.seek(0)
+        reader = PdfFileReader(self.output)
+        return reader.getPage(0)
 
 

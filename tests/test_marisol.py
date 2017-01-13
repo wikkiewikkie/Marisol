@@ -1,4 +1,5 @@
-from marisol import Document, Marisol, Page
+from marisol import Document, Marisol, Overlay, Page
+from PyPDF2.pdf import PageObject
 from tests.mocks import MockPDF
 import pytest
 
@@ -57,6 +58,12 @@ def test_document_iteration(document):
     assert count == 3
 
 
+def test_document_save(document):
+    for page in document:
+        page.apply()
+    document.save()
+
+
 def test_document_str(populated):
     doc = next(populated)
     assert str(doc) == "TEST000001 - TEST000001"  # first document has one page
@@ -64,5 +71,13 @@ def test_document_str(populated):
     assert str(doc) == "TEST000002 - TEST000004"  # second document has three pages
 
 
+def test_overlay(page):
+    o = Overlay(page.size, page.number)
+    assert isinstance(o.page(), PageObject)
+
 def test_page_str(page):
     assert str(page) == "TEST000003"
+
+
+def test_page_apply(page):
+    page.apply()
