@@ -27,5 +27,5 @@ has stuck, even though the vast majority of these identifiers are now applied el
 
 ## License
 
-The [source code(https://github.com/wikkiewikkie/Marisol)] for `Marisol` is published under
-the [MIT License(https://github.com/wikkiewikkie/Marisol/blob/master/LICENSE)].
+The [source code](https://github.com/wikkiewikkie/Marisol) for `Marisol` is published under
+the [MIT License](https://github.com/wikkiewikkie/Marisol/blob/master/LICENSE).
