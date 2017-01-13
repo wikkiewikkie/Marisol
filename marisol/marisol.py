@@ -8,17 +8,15 @@ import io
 
 
 class Marisol(object):
-
+    """ A collection of documents to be bates numbered. """
     def __init__(self, prefix, fill, start):
         """
         Base Class
 
-        :param prefix: Bates number prefix.
-        :param fill: Number of digits for zero-filling
-        :param start: Beginning number.
-        :type prefix: str
-        :type fill: int
-        :type start: int
+        Args:
+            prefix (str): Bates number prefix
+            fill (int): Length for zero-filling
+            start (int): Starting bates number
         """
         self.prefix = prefix
         self.fill = fill
@@ -45,16 +43,18 @@ class Marisol(object):
         self.number += len(d)
         return d
 
-    def add_documents(self, file_names):
-        for file_name in file_names:
-            self.documents.append(file_name)
+    def append(self, file):
+        """
+        Add a document to the collection.
 
-    def run(self):
-        for document in self.documents:
-            with open(document, "rb") as file:
-                print(self.prefix, self.fill, self.index)
-                d = Document(file, self.prefix, self.fill, self.index)
-                self.index += len(d)
+        Args:
+            file (str or file-like object):  PDF file or file name to add.
+
+        Returns:
+            Marisol
+        """
+        self.documents.append(file)
+        return self
 
 
 class Document(object):
@@ -71,8 +71,11 @@ class Document(object):
     :type start: int
     """
     def __init__(self, file, prefix, fill, start):
-        with open(file, "rb") as file:
+        try:
             self.file = io.BytesIO(file.read())
+        except TypeError:
+            with open(file, "rb") as file:
+                self.file = io.BytesIO(file.read())
         self.reader = PdfFileReader(self.file)
         self.prefix = prefix
         self.fill = fill
@@ -96,9 +99,19 @@ class Document(object):
         return p
 
     def __str__(self):
-        return "{prefix}{start} - {prefix}{end}".format(prefix=self.prefix,
-                                                        start=str(self.start).zfill(self.fill),
-                                                        end=str(self.start+len(self)-1).zfill(self.fill))
+        return "{begin} - {end}".format(begin=self.begin, end=self.end)
+
+    @property
+    def begin(self):
+        num = str(self.start)
+        num = num.zfill(self.fill)
+        return "{prefix}{num}".format(prefix=self.prefix, num=num)
+
+    @property
+    def end(self):
+        num = str(self.start+len(self)-1)
+        num = num.zfill(self.fill)
+        return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
     def save(self):
         with open("out.pdf", "wb") as out_file:
