@@ -6,14 +6,15 @@ from reportlab.lib import pagesizes
 
 import copy
 import io
+import os
 import multiprocessing
 
 
 class Marisol(object):
-    """ A collection of documents to be bates numbered. """
+
     def __init__(self, prefix, fill, start):
         """
-        Base Class
+        Marisol Base Class - A collection of documents to be bates numbered.
 
         Args:
             prefix (str): Bates number prefix
@@ -27,6 +28,7 @@ class Marisol(object):
         self.number = 0
 
         self.documents = []
+        self.overwrite = False
 
     def __len__(self):
         return len(self.documents)
@@ -56,9 +58,9 @@ class Marisol(object):
             (str, bool): The file name saved to and success or failure.
         """
         try:
-            filename = document.save()
-        except Exception as err:
-            return "ERROR", False
+            filename = document.save(overwrite=self.overwrite)
+        except FileExistsError as err:
+            return "EXISTS", False
         else:
             return filename, True
 
@@ -67,42 +69,43 @@ class Marisol(object):
         Add a document to the collection.
 
         Args:
-            file (str or file-like object):  PDF file or file name to add.
+            file (str or file-like object): PDF file or file name to add.
 
         Returns:
-            Marisol
+            marisol.Marisol: The current Marisol instance.
         """
         self.documents.append(file)
         return self
 
-    def save_all(self, threads=multiprocessing.cpu_count()*6):
+    def save(self, overwrite=False, threads=multiprocessing.cpu_count()*6):
         """Save all documents using a thread pool executor
 
         Args:
-            threads (int):  The number of threads to use when processing.
+            overwrite (bool, optional): Switch to allow overwriting of existing files.
+            threads (int, optional): The number of threads to use when processing.  Defaults to the number of cores
+                times six.
 
         Returns:
             list: each file name and true or false indicating success or failure
         """
+        self.overwrite = overwrite
         with futures.ThreadPoolExecutor(threads) as executor:
-            results = executor.map(self.save_doc, self)
+            results = executor.map(self._save_document, self)
         return list(results)
 
 
 class Document(object):
-    """
-    Class representing documents/files.
 
-    :param file:
-    :param prefix:
-    :param fill:
-    :param start:
-    :type file:  File or file-like object
-    :type prefix: str
-    :type fill: int
-    :type start: int
-    """
     def __init__(self, file, prefix, fill, start):
+        """
+        Represents a document to be numbered.
+
+        Args:
+            file (): PDF file associated with this document.
+            prefix (str): Bates number prefix.
+            fill (int): Length to zero-pad number to.
+            start (int): Number to start with.
+        """
         try:
             self.file = io.BytesIO(file.read())
         except AttributeError:
@@ -136,10 +139,10 @@ class Document(object):
     @property
     def begin(self):
         """
-        Beginning bates number for the document.
+        Beginning bates number for this document.
 
-        :return: Bates number of first page in document.
-        :rtype: str
+        Returns:
+            str: Bates number of the first page of the document.
         """
         num = str(self.start)
         num = num.zfill(self.fill)
@@ -147,21 +150,35 @@ class Document(object):
 
     @property
     def end(self):
-        """Ending bates number for the document"""
+        """
+        Ending bates number for the document
+
+        Returns:
+            str: Bates number of the last page of the document.
+        """
         num = str(self.start+len(self)-1)
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
-    def save(self, filename=None):
+    def save(self, filename=None, overwrite=False):
         """
         Applies the bates numbers and saves to file.
 
-        :param filename: Path where the PDF should be saved
-        :type filename: str
-        :return: Path where file was saved
-        :rtype: str
+        Args:
+            filename (str): Path where the PDF should be saved.
+            overwrite (bool): Switch to allow overwriting of existing files.
+
+        Returns:
+            str: Path where the file was saved.
+
+        Raises:
+            FileExistsError: When the file already exists and overwrite is not enabled.
         """
         filename = filename or "{begin}.pdf".format(begin=self.begin)
+
+        if os.path.exists(filename) and not overwrite:
+            raise FileExistsError("PDF file {} already exists and overwrite is disabled.".format(filename))
+
         with open(filename, "wb") as out_file:
             writer = PdfFileWriter()
             for page in self:
@@ -174,6 +191,15 @@ class Document(object):
 class Page(object):
 
     def __init__(self, page, prefix, fill, start):
+        """
+        Represents a page within a document that will be bates numbered.
+
+        Args:
+            page (PyPdf2.pdf.PageObject): PDF page associated with this page
+            prefix (str): Bates number prefix.
+            fill (int): Length to zero-pad number to.
+            start (int): Number to start with.
+        """
         self.page = page
         self.prefix = prefix
         self.fill = fill
@@ -185,16 +211,23 @@ class Page(object):
         return self.number
 
     def apply(self):
-        """Applies the bates number overlay to the page"""
+        """
+        Applies the bates number overlay to the page
+
+        Returns:
+            bool
+        """
         overlay = Overlay(self.size, self.number)
         self.page.mergePage(overlay.page())
+        return True
 
     @property
     def number(self):
         """
         The bates number for the page.
-        :return: Bates number
-        :rtype: str
+
+        Returns:
+            str: Bates number.
         """
         num = str(self.start)
         num = num.zfill(self.fill)
@@ -206,8 +239,8 @@ class Page(object):
         Takes the dimensions of the original page and returns the name and dimensions of the corresponding reportlab
         pagesize.
 
-        :return: A tuple containing the name of the page size and the dimensions (in a tuple)
-        :rtype: (str, tuple)
+        Returns:
+            tuple: name of the page size, and the dimensions (tuple)
         """
         dims = (float(self.width), float(self.height))
         for name in dir(pagesizes):
@@ -222,12 +255,19 @@ class Page(object):
 class Overlay(object):
 
     def __init__(self, size, text):
+        """
+        Overlay that will be used to affix bates numbering
+
+        Args:
+            size (tuple): Size of the page as returned by Page.size()
+            text: text that will be overlaid on the page.
+        """
         self.size_name, self.size = size
         self.text = text
 
         self.output = io.BytesIO()
         self.c = canvas.Canvas(self.output, pagesize=self.size)
-        offset_right = 15 # initial offset
+        offset_right = 15  # initial offset
         offset_right += len(text)*7  # offset for text length
         self.c.drawString(self.size[0]-offset_right, 15, self.text)
         self.c.showPage()
@@ -236,8 +276,9 @@ class Overlay(object):
     def page(self):
         """
         The page used to perform the overlay.
-        :return: The page
-        :rtype: PyPdf2.pdf.PageObject
+
+        Returns:
+            PyPdf2.pdf.PageObject: The overlay page.
         """
         self.output.seek(0)
         reader = PdfFileReader(self.output)
