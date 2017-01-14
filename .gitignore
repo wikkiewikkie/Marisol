@@ -88,5 +88,8 @@ ENV/
 # Rope project settings
 .ropeproject
 
-#PyCharm
+# PyCharm
 .idea/
+
+# Testing files
+*.pdf
