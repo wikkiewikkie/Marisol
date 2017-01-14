@@ -73,7 +73,7 @@ class Document(object):
     def __init__(self, file, prefix, fill, start):
         try:
             self.file = io.BytesIO(file.read())
-        except TypeError:
+        except AttributeError:
             with open(file, "rb") as file:
                 self.file = io.BytesIO(file.read())
         self.reader = PdfFileReader(self.file)
