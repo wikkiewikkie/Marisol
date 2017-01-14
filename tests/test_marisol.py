@@ -36,20 +36,24 @@ def page(document):
 
 
 def test_marisol_append(empty):
-    # append from file name
     with open("test.pdf", "wb") as test_file:
         p = MockPDF(5)
         test_file.write(p.read())
 
-    empty.append("test.pdf")
-    assert len(empty) == 1
-    os.remove("test.pdf")
-
     # append from open file
     empty.append(MockPDF(1)).append(MockPDF(3))
-    assert len(empty) == 3
+    assert len(empty) == 2
     empty.append(MockPDF(5))
+    assert len(empty) == 3
+
+    # append from file name
+    empty.append("test.pdf")
     assert len(empty) == 4
+
+    for document in empty:
+        assert isinstance(document, Document)
+
+    os.remove("test.pdf")
 
 
 def test_marisol_iteration(populated):
@@ -59,6 +63,25 @@ def test_marisol_iteration(populated):
         assert isinstance(doc, Document)
         count += 1
     assert count == 3
+
+
+def test_marisol_save(populated):
+    result = populated.save()
+    file_names = []
+    for filename, success in result:
+        assert success
+        file_names.append(filename)
+
+    result = populated.save()
+    for filename, success in result:
+        assert not success  # should fail because files exists already
+
+    result = populated.save(overwrite=True)
+    for filename, success in result:
+        assert success  # should succeed because overwrite is enabled
+
+    for filename in file_names:  # clean up
+        os.remove(filename)
 
 
 def test_document_iteration(document):
@@ -74,6 +97,8 @@ def test_document_save(document):
     filename = document.save()
     assert filename == "TEST000002.pdf"  # will automatically use begin bates for file name
     assert os.path.exists(filename)  # file is written to disk
+    with pytest.raises(FileExistsError):
+        document.save()  # file already exists
     os.remove(filename)
 
     filename = document.save("ANOTHER.pdf")
