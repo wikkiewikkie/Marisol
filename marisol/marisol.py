@@ -113,14 +113,15 @@ class Document(object):
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
-    def save(self):
-        with open("out.pdf", "wb") as out_file:
+    def save(self, filename=None):
+        filename = filename or "{begin}.pdf".format(begin=self.begin)
+        with open(filename, "wb") as out_file:
             writer = PdfFileWriter()
             for page in self:
-                print(type(page.page))
                 page.apply()
                 writer.addPage(page.page)
             writer.write(out_file)
+        return filename
 
 
 class Page(object):
