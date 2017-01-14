@@ -16,7 +16,7 @@ has stuck, even though the vast majority of these identifiers are now applied el
 
 ```python
 >>> from marisol import Marisol
->>> m = Marisol('TEST', 6, 1)
+>>> m = Marisol('TEST', 6, 1)  # Begin numbering with TEST000001
 >>> m.append('first.pdf')  # Path to PDF (1 page)
 >>> m.append('second.pdf')  # Path to PDF (3 pages)
 >>> m.save()  # Export numbered PDFs, named for the bates number.
@@ -28,7 +28,7 @@ Documents can be loaded using a file name or by passing a file-like object.
 
 ```python
 >>> m.append('myPdf.pdf')  # Load by file name
->>> m.append(open('myOtherPdf.pdf', 'rb'))
+>>> m.append(open('myOtherPdf.pdf', 'rb'))  # Load with a file object
 ```
 
 ### Exporting
@@ -40,8 +40,8 @@ is not specified, the resulting PDFs will be named for the beginning bates numbe
 >>> m.save()  # save all documents
 >>> doc = next(m)
 >>> doc.save()  # save one document
->>> doc = next(m)
->>> doc.save("customName.pdf")  # specify another file name
+>>> another_doc = next(m)
+>>> another_doc.save("customName.pdf")  # specify a custom file name
 ```
 
 ## Testing
@@ -49,7 +49,7 @@ is not specified, the resulting PDFs will be named for the beginning bates numbe
 `Marisol` is automatically tested against Python versions 3.2 - 3.6.  Tests can be run manually using `pytest`.
 
 ```
-py.test --cov=Marisol/ --cov-report=term-missing
+py.test --cov=marisol/ --cov-report=term-missing
 ```
 
 ## Performance
