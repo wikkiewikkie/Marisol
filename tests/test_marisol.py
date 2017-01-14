@@ -1,6 +1,8 @@
 from marisol import Document, Marisol, Overlay, Page
 from PyPDF2.pdf import PageObject
 from tests.mocks import MockPDF
+
+import os
 import pytest
 
 
@@ -34,10 +36,20 @@ def page(document):
 
 
 def test_marisol_append(empty):
+    # append from file name
+    with open("test.pdf", "wb") as test_file:
+        p = MockPDF(5)
+        test_file.write(p.read())
+
+    empty.append("test.pdf")
+    assert len(empty) == 1
+    os.remove("test.pdf")
+
+    # append from open file
     empty.append(MockPDF(1)).append(MockPDF(3))
-    assert len(empty) == 2
-    empty.append(MockPDF(5))
     assert len(empty) == 3
+    empty.append(MockPDF(5))
+    assert len(empty) == 4
 
 
 def test_marisol_iteration(populated):
@@ -59,9 +71,15 @@ def test_document_iteration(document):
 
 
 def test_document_save(document):
-    for page in document:
-        page.apply()
-    document.save()
+    filename = document.save()
+    assert filename == "TEST000002.pdf"  # will automatically use begin bates for file name
+    assert os.path.exists(filename)  # file is written to disk
+    os.remove(filename)
+
+    filename = document.save("ANOTHER.pdf")
+    assert filename == "ANOTHER.pdf"  # file name can be overridden
+    assert os.path.exists(filename)  # file is written to disk
+    os.remove("ANOTHER.pdf")
 
 
 def test_document_str(populated):
@@ -74,6 +92,7 @@ def test_document_str(populated):
 def test_overlay(page):
     o = Overlay(page.size, page.number)
     assert isinstance(o.page(), PageObject)
+
 
 def test_page_str(page):
     assert str(page) == "TEST000003"
