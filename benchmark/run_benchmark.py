@@ -3,7 +3,7 @@ from tests.mocks import MockPDF
 
 import time
 import os
-import multiprocessing
+
 
 if __name__ == "__main__":
 
@@ -38,5 +38,3 @@ if __name__ == "__main__":
     for file_name in os.listdir():
         if file_name[-4:] == ".pdf":
             os.remove(file_name)
-
-

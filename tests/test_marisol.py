@@ -50,8 +50,8 @@ def test_marisol_append(empty):
     empty.append("test.pdf")
     assert len(empty) == 4
 
-    for document in empty:
-        assert isinstance(document, Document)
+    for doc in empty:
+        assert isinstance(doc, Document)
 
     os.remove("test.pdf")
 
@@ -87,8 +87,8 @@ def test_marisol_save(populated):
 def test_document_iteration(document):
     assert len(document) == 3  # document contains three pages
     count = 0
-    for page in document:
-        assert isinstance(page, Page)
+    for p in document:
+        assert isinstance(p, Page)
         count += 1
     assert count == 3
 

@@ -59,7 +59,7 @@ class Marisol(object):
         """
         try:
             filename = document.save(overwrite=self.overwrite)
-        except FileExistsError as err:
+        except FileExistsError:
             return "EXISTS", False
         else:
             return filename, True
@@ -236,7 +236,7 @@ class Page(object):
     @property
     def size(self):
         """
-        Takes the dimensions of the original page and returns the name and dimensions of the corresponding reportlab
+        Takes the dimensions of the original page and returns the name and dimensions of the corresponding ReportLab
         pagesize.
 
         Returns:
@@ -283,5 +283,3 @@ class Overlay(object):
         self.output.seek(0)
         reader = PdfFileReader(self.output)
         return reader.getPage(0)
-
-
