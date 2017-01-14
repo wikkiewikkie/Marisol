@@ -103,17 +103,32 @@ class Document(object):
 
     @property
     def begin(self):
+        """
+        Beginning bates number for the document.
+
+        :return: Bates number of first page in document.
+        :rtype: str
+        """
         num = str(self.start)
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
     @property
     def end(self):
+        """Ending bates number for the document"""
         num = str(self.start+len(self)-1)
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
     def save(self, filename=None):
+        """
+        Applies the bates numbers and saves to file.
+
+        :param filename: Path where the PDF should be saved
+        :type filename: str
+        :return: Path where file was saved
+        :rtype: str
+        """
         filename = filename or "{begin}.pdf".format(begin=self.begin)
         with open(filename, "wb") as out_file:
             writer = PdfFileWriter()
@@ -138,17 +153,30 @@ class Page(object):
         return self.number
 
     def apply(self):
+        """Applies the bates number overlay to the page"""
         overlay = Overlay(self.size, self.number)
         self.page.mergePage(overlay.page())
 
     @property
     def number(self):
+        """
+        The bates number for the page.
+        :return: Bates number
+        :rtype: str
+        """
         num = str(self.start)
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
     @property
     def size(self):
+        """
+        Takes the dimensions of the original page and returns the name and dimensions of the corresponding reportlab
+        pagesize.
+
+        :return: A tuple containing the name of the page size and the dimensions (in a tuple)
+        :rtype: (str, tuple)
+        """
         dims = (float(self.width), float(self.height))
         for name in dir(pagesizes):
             size = getattr(pagesizes, name)
@@ -174,6 +202,11 @@ class Overlay(object):
         self.c.save()
 
     def page(self):
+        """
+        The page used to perform the overlay.
+        :return: The page
+        :rtype: PyPdf2.pdf.PageObject
+        """
         self.output.seek(0)
         reader = PdfFileReader(self.output)
         return reader.getPage(0)
