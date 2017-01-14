@@ -6,7 +6,7 @@
 
 ## What's a Bates Number?
 
-Bates numbers are identifiers placed on each page in a git stcollection of documents so that they can be uniquely identified.
+Bates numbers are identifiers placed on each page in a collection of documents so that they can be uniquely identified.
 They are frequently used in the legal field when producing documents in connection with a legal proceeding.  The name
 "Bates number" comes from a time when the numbers were stamped on paper documents using a hand stamp that would
 increment the number each time it was used.  These hand stamps were invented by Edwin G. *Bates* in 1891 and the name
@@ -27,7 +27,9 @@ has stuck, even though the vast majority of these identifiers are now applied el
 'TEST000005 - TEST000005'
 ```
 
-## Running Tests
+## Testing
+
+`Marisol` is automatically tested against Python versions 3.2 - 3.6.  Tests can be run manually using `pytest`.
 
 ```
 py.test --cov=Marisol/ --cov-report=term-missing
