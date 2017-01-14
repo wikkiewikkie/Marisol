@@ -31,6 +31,17 @@ Documents can be loaded using a file name or by passing a file-like object.
 >>> m.append(open('myOtherPdf.pdf', 'rb'))  # Load with a file object
 ```
 
+### Areas
+
+Bates numbers can be placed in four different areas on the page. Top-left, top-right, bottom-right, and bottom-left.
+To set the area, simply specify it when calling `Marisol`.  If no area is specified, the bates number will be placed
+in the bottom-right.
+
+```python
+>>> from marisol import Area, Marisol
+>>> m = Marisol("TEST", 6, 1, area=Area.TOP_LEFT)
+```
+
 ### Exporting
 
 Exports can be performed at the document-level, or against all documents using the `save()` method.  When a file name

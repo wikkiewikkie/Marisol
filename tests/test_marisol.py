@@ -1,4 +1,4 @@
-from marisol import Document, Marisol, Overlay, Page
+from marisol import Area, Document, Marisol, Overlay, Page
 from PyPDF2.pdf import PageObject
 from tests.mocks import MockPDF
 
@@ -115,7 +115,7 @@ def test_document_str(populated):
 
 
 def test_overlay(page):
-    o = Overlay(page.size, page.number)
+    o = Overlay(page.size, page.number, area=Area.BOTTOM_RIGHT)
     assert isinstance(o.page(), PageObject)
 
 

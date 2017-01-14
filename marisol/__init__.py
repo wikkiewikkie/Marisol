@@ -1,3 +1,3 @@
-from .marisol import Document, Marisol, Overlay, Page
+from .marisol import Area, Document, Marisol, Overlay, Page
 
-__all__ = ["Document", "Marisol", "Overlay", "Page"]
+__all__ = ["Area", "Document", "Marisol", "Overlay", "Page"]

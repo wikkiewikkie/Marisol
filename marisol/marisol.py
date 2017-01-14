@@ -1,5 +1,6 @@
 from concurrent import futures
 
+from enum import Enum
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib import pagesizes
@@ -10,9 +11,16 @@ import os
 import multiprocessing
 
 
+class Area(Enum):
+    TOP_LEFT = 0
+    TOP_RIGHT = 1
+    BOTTOM_RIGHT = 2
+    BOTTOM_LEFT = 3
+
+
 class Marisol(object):
 
-    def __init__(self, prefix, fill, start):
+    def __init__(self, prefix, fill, start, area=Area.BOTTOM_RIGHT):
         """
         Marisol Base Class - A collection of documents to be bates numbered.
 
@@ -20,10 +28,13 @@ class Marisol(object):
             prefix (str): Bates number prefix
             fill (int): Length for zero-filling
             start (int): Starting bates number
+            area (Area): Area in which to place the bates number.
         """
         self.prefix = prefix
         self.fill = fill
         self.start = start
+        self.area = area
+
         self.index = 0
         self.number = 0
 
@@ -42,7 +53,8 @@ class Marisol(object):
         d = Document(self.documents[self.index],
                      self.prefix,
                      self.fill,
-                     self.start+self.number)
+                     self.start+self.number,
+                     self.area)
         self.index += 1
         self.number += len(d)
         return d
@@ -96,7 +108,7 @@ class Marisol(object):
 
 class Document(object):
 
-    def __init__(self, file, prefix, fill, start):
+    def __init__(self, file, prefix, fill, start, area):
         """
         Represents a document to be numbered.
 
@@ -105,6 +117,7 @@ class Document(object):
             prefix (str): Bates number prefix.
             fill (int): Length to zero-pad number to.
             start (int): Number to start with.
+            area (Area): Area on the document where the number should be drawn
         """
         try:
             self.file = io.BytesIO(file.read())
@@ -115,6 +128,8 @@ class Document(object):
         self.prefix = prefix
         self.fill = fill
         self.start = copy.copy(start)
+        self.area = area
+
         self.index = 0
 
     def __len__(self):
@@ -129,7 +144,8 @@ class Document(object):
         p = Page(self.reader.getPage(self.index),
                  self.prefix,
                  self.fill,
-                 self.start+self.index)
+                 self.start+self.index,
+                 self.area)
         self.index += 1
         return p
 
@@ -190,7 +206,7 @@ class Document(object):
 
 class Page(object):
 
-    def __init__(self, page, prefix, fill, start):
+    def __init__(self, page, prefix, fill, start, area):
         """
         Represents a page within a document that will be bates numbered.
 
@@ -199,11 +215,14 @@ class Page(object):
             prefix (str): Bates number prefix.
             fill (int): Length to zero-pad number to.
             start (int): Number to start with.
+            area (Area): Area on the page where the number should be drawn
         """
         self.page = page
         self.prefix = prefix
         self.fill = fill
         self.start = start
+        self.area = area
+
         self.height = self.page.mediaBox.upperRight[1]
         self.width = self.page.mediaBox.lowerRight[0]
 
@@ -217,7 +236,7 @@ class Page(object):
         Returns:
             bool
         """
-        overlay = Overlay(self.size, self.number)
+        overlay = Overlay(self.size, self.number, self.area)
         self.page.mergePage(overlay.page())
         return True
 
@@ -254,22 +273,24 @@ class Page(object):
 
 class Overlay(object):
 
-    def __init__(self, size, text):
+    def __init__(self, size, text, area):
         """
         Overlay that will be used to affix bates numbering
 
         Args:
             size (tuple): Size of the page as returned by Page.size()
             text: text that will be overlaid on the page.
+            area (Area, optional): Area on the overlay where the number should be drawn; defaults to bottom right
         """
         self.size_name, self.size = size
         self.text = text
 
         self.output = io.BytesIO()
         self.c = canvas.Canvas(self.output, pagesize=self.size)
-        offset_right = 15  # initial offset
-        offset_right += len(text)*7  # offset for text length
-        self.c.drawString(self.size[0]-offset_right, 15, self.text)
+
+        position_left, position_bottom = self.position(area)
+        self.c.drawString(position_left, position_bottom, self.text)
+
         self.c.showPage()
         self.c.save()
 
@@ -283,3 +304,29 @@ class Overlay(object):
         self.output.seek(0)
         reader = PdfFileReader(self.output)
         return reader.getPage(0)
+
+    def position(self, area):
+        """
+        Get the appropriate position on the page given an area.
+
+        Args:
+            area (Area): Area on the overlay where the number should be drawn
+
+        Returns:
+            tuple: the position
+        """
+        if area in [Area.TOP_LEFT, Area.TOP_RIGHT]:  # top
+            from_bottom = self.size[1]-15  # 15 down from height of page
+        elif area in [Area.BOTTOM_LEFT, Area.BOTTOM_RIGHT]:  # bottom
+            from_bottom = 15  # 15 up from bottom of page
+        else:
+            raise ValueError("Invalid area {}".format(area))
+
+        if area in [Area.TOP_LEFT, Area.BOTTOM_LEFT]:  # left
+            from_left = 15
+        elif area in [Area.TOP_RIGHT, Area.BOTTOM_RIGHT]:  # right
+            offset = 15  # initial offset
+            offset += len(self.text) * 7  # offset for text length
+            from_left = self.size[0]-offset
+
+        return from_left, from_bottom
