@@ -1,10 +1,12 @@
 # Marisol
+[![Build Status](https://travis-ci.org/wikkiewikkie/Marisol.svg?branch=master)](https://travis-ci.org/wikkiewikkie/Marisol)
+[![codecov](https://codecov.io/gh/wikkiewikkie/Marisol/branch/master/graph/badge.svg)](https://codecov.io/gh/wikkiewikkie/Marisol)
 
 `Marisol` is a Python library that can be used to add bates numbers to existing PDF files.
 
 ## What's a Bates Number?
 
-Bates numbers are identifiers placed on each page in a collection of documents so that they can be uniquely identified.
+Bates numbers are identifiers placed on each page in a git stcollection of documents so that they can be uniquely identified.
 They are frequently used in the legal field when producing documents in connection with a legal proceeding.  The name
 "Bates number" comes from a time when the numbers were stamped on paper documents using a hand stamp that would
 increment the number each time it was used.  These hand stamps were invented by Edwin G. *Bates* in 1891 and the name
