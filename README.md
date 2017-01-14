@@ -48,7 +48,7 @@ Benchmark Complete.
 56.525897192165345 pages per second.
 Cleaning up...
 ```
-On a laptop with an AMD A10-8700B processor and SSD hard drive, `Elizabeth` is currently capable of bates-numbering
+On a laptop with an AMD A10-8700B processor and SSD hard drive, `Marisol` is currently capable of bates-numbering
 about 56 pages per second.
 
 ## License
