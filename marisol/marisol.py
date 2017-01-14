@@ -1,10 +1,12 @@
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from concurrent import futures
 
+from PyPDF2 import PdfFileReader, PdfFileWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib import pagesizes
 
 import copy
 import io
+import multiprocessing
 
 
 class Marisol(object):
@@ -43,6 +45,23 @@ class Marisol(object):
         self.number += len(d)
         return d
 
+    def _save_document(self, document):
+        """
+        Internal method called by thread pool executor.
+
+        Args:
+            document (Document):  The document to save.
+
+        Returns:
+            (str, bool): The file name saved to and success or failure.
+        """
+        try:
+            filename = document.save()
+        except Exception as err:
+            return "ERROR", False
+        else:
+            return filename, True
+
     def append(self, file):
         """
         Add a document to the collection.
@@ -55,6 +74,19 @@ class Marisol(object):
         """
         self.documents.append(file)
         return self
+
+    def save_all(self, threads=multiprocessing.cpu_count()*6):
+        """Save all documents using a thread pool executor
+
+        Args:
+            threads (int):  The number of threads to use when processing.
+
+        Returns:
+            list: each file name and true or false indicating success or failure
+        """
+        with futures.ThreadPoolExecutor(threads) as executor:
+            results = executor.map(self.save_doc, self)
+        return list(results)
 
 
 class Document(object):

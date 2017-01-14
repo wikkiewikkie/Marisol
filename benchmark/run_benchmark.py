@@ -3,12 +3,13 @@ from tests.mocks import MockPDF
 
 import time
 import os
+import multiprocessing
 
 if __name__ == "__main__":
 
     print("Creating test files...")
     file_names = []
-    for num in range(1, 1001):
+    for num in range(1, 5001):
         bates_number = str(num).zfill(6)
         file_name = "TESTIN{}.pdf".format(bates_number)
         file_names.append(file_name)
@@ -25,14 +26,13 @@ if __name__ == "__main__":
     for file_name in file_names:
         m.append(file_name)
 
-    for d in m:
-        d.save()
+    m.save()
 
     end = time.perf_counter()
     print("Benchmark Complete.")
 
     print("{} seconds elapsed.".format(end-start))
-    print("{} pages per second.".format(1000/(end-start)))
+    print("{} pages per second.".format(5000/(end-start)))
 
     print("Cleaning up...")
     for file_name in os.listdir():

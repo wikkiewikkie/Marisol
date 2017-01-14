@@ -44,12 +44,13 @@ python run_benchmark.py
 Creating test files...
 Starting Benchmark...
 Benchmark Complete.
-17.691006240916472 seconds elapsed.
-56.525897192165345 pages per second.
+34.294837610624 seconds elapsed.
+145.794537847617 pages per second.
 Cleaning up...
 ```
-On a laptop with an AMD A10-8700B processor and SSD hard drive, `Marisol` is currently capable of bates-numbering
-about 56 pages per second.
+On a workstation with a dual-core Pentium G3258 CPU and SSD hard drive, `Marisol` is currently capable of
+bates-numbering over 140 pages per second.  `Marisol` uses multiple threads during processing and performance is
+CPU-bound, so a faster processor with additional cores will result in better performance.
 
 ## License
 
