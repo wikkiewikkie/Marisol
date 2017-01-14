@@ -23,7 +23,7 @@ class MockPDF(object):
         canvas = Canvas(self.file, pagesize=self.size)
 
         for page_num in range(pages):
-            canvas.drawString(0, self.size[1]-30, "MockPDF Created By Marisol - Page {} of {}".format(page_num+1))
+            canvas.drawString(0, self.size[1]-30, "MockPDF Created By Marisol - Page {} of {}".format(page_num+1, size))
             canvas.showPage()
 
         canvas.save()
