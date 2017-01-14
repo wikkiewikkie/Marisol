@@ -25,6 +25,12 @@ has stuck, even though the vast majority of these identifiers are now applied el
 'TEST000005 - TEST000005'
 ```
 
+## Running Tests
+
+```
+py.test --cov=Marisol/ --cov-report=term-missing
+```
+
 ## License
 
 The [source code](https://github.com/wikkiewikkie/Marisol) for `Marisol` is published under
