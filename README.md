@@ -35,6 +35,22 @@ has stuck, even though the vast majority of these identifiers are now applied el
 py.test --cov=Marisol/ --cov-report=term-missing
 ```
 
+## Performance
+
+Page-per-second performance can be measured using the `run_benchmark.py` script in the `benchmark` folder.
+
+```
+python run_benchmark.py
+Creating test files...
+Starting Benchmark...
+Benchmark Complete.
+17.691006240916472 seconds elapsed.
+56.525897192165345 pages per second.
+Cleaning up...
+```
+On a laptop with an AMD A10-8700B and SSD hard drive, `Elizabeth` is currently capable of bates-numbering about 56 pages
+per second.
+
 ## License
 
 The [source code](https://github.com/wikkiewikkie/Marisol) for `Marisol` is published under
