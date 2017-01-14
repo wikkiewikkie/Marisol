@@ -12,19 +12,36 @@ They are frequently used in the legal field when producing documents in connecti
 increment the number each time it was used.  These hand stamps were invented by Edwin G. *Bates* in 1891 and the name
 has stuck, even though the vast majority of these identifiers are now applied electronically.
 
-## Basic Usage
+## Usage
 
 ```python
 >>> from marisol import Marisol
 >>> m = Marisol('TEST', 6, 1)
 >>> m.append('first.pdf')  # Path to PDF (1 page)
 >>> m.append('second.pdf')  # Path to PDF (3 pages)
->>> m.append(open('first.pdf', 'rb'))  # Marisol can take a file name, or a file object
->>> for doc in m:
->>>     print(doc)
-'TEST000001 - TEST000001'
-'TEST000002 - TEST000004'
-'TEST000005 - TEST000005'
+>>> m.save()  # Export numbered PDFs, named for the bates number.
+```
+
+### Loading
+
+Documents can be loaded using a file name or by passing a file-like object.
+
+```python
+>>> m.append('myPdf.pdf')  # Load by file name
+>>> m.append(open('myOtherPdf.pdf', 'rb'))
+```
+
+### Exporting
+
+Exports can be performed at the document-level, or against all documents using the `save()` method.  When a file name
+is not specified, the resulting PDFs will be named for the beginning bates number of that document.
+
+```python
+>>> m.save()  # save all documents
+>>> doc = next(m)
+>>> doc.save()  # save one document
+>>> doc = next(m)
+>>> doc.save("customName.pdf")  # specify another file name
 ```
 
 ## Testing
