@@ -57,7 +57,8 @@ is not specified, the resulting PDFs will be named for the beginning bates numbe
 
 ## Testing
 
-`Marisol` is automatically tested against Python versions 3.2 - 3.6.  Tests can be run manually using `pytest`.
+`Marisol` is automatically tested against the development and production branches of Python 3.4 - 3.7.  Tests can be
+run manually using `pytest`.
 
 ```
 py.test --cov=marisol/ --cov-report=term-missing
