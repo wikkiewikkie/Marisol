@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/wikkiewikkie/Marisol.svg?branch=master)](https://travis-ci.org/wikkiewikkie/Marisol)
 [![codecov](https://codecov.io/gh/wikkiewikkie/Marisol/branch/master/graph/badge.svg)](https://codecov.io/gh/wikkiewikkie/Marisol)
 
-`Marisol` is a Python library that can be used to add bates numbers to existing PDF files.
+`Marisol` is a Python library that can be used to add bates numbers and static text stamps to existing PDF files.
 
 ## What's a Bates Number?
 
@@ -41,6 +41,20 @@ in the bottom-right.
 >>> from marisol import Area, Marisol
 >>> m = Marisol("TEST", 6, 1, area=Area.TOP_LEFT)
 ```
+
+### Static Text
+
+Static text overlays are used when you want to apply the same text to every page in a document.  Since the text may
+change between documents, it is applied at the document level using a `StaticOverlay`.
+
+```python
+>>> overlay = StaticOverlay("CONFIDENTIAL")
+>>> doc = next(m)
+>>> doc.add_overlay(overlay, Area.BOTTOM_LEFT)
+```
+
+These overlays may be applied to any of the defined areas, but each may contain only be one `StaticOverlay`.  A
+`StaticOverlay` can not occupy the same area as the bates number.
 
 ### Exporting
 
