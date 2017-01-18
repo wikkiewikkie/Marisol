@@ -5,4 +5,4 @@ __all__ = ["Area", "BatesOverlay", "Document", "Marisol", "PageOverlay", "Page",
 __author__ = "Kevin Schellenberg"
 __email__ = "wikkiewikkie@gmail.com"
 __license__ = "MIT"
-__version__ = "0.1.0"
+__version__ = "0.2.1"
