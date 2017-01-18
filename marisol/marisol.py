@@ -1,5 +1,4 @@
 from concurrent import futures
-
 from enum import Enum
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from reportlab.pdfgen import canvas
@@ -16,6 +15,16 @@ class Area(Enum):
     TOP_RIGHT = 1
     BOTTOM_RIGHT = 2
     BOTTOM_LEFT = 3
+
+
+class RedactionStyle(Enum):
+    SOLID = ((0, 0, 0), (0, 0, 0), (1, 1, 1))
+    OUTLINE = ((0, 0, 0), (1, 1, 1), (0, 0, 0))
+
+    def __init__(self, stroke, fill, text):
+        self.stroke = stroke
+        self.fill = fill
+        self.text = text
 
 
 class Marisol(object):
@@ -41,8 +50,8 @@ class Marisol(object):
         self.documents = []
         self.overwrite = False
 
-    def __getitem__(self, item):
-        return self.documents[item]
+    def __getitem__(self, key):
+        return self.documents[key]
 
     def __len__(self):
         return len(self.documents)
@@ -130,9 +139,17 @@ class Document(object):
         self.area = area
 
         self.overlays = {x: None for x in Area}
-        self.overlays[area] = BatesOverlay()
+        self.overlays[area] = BatesOverlay(None, self.area)
 
         self.index = 0
+
+        self.pages = []
+        for num, page in enumerate(self.reader.pages):
+            p = Page(self, page, self.prefix, self.fill, self.start + num)
+            self.pages.append(p)
+
+    def __getitem__(self, k):
+        return self.pages[k]
 
     def __len__(self):
         return self.reader.numPages
@@ -143,14 +160,8 @@ class Document(object):
     def __next__(self):
         if self.index >= len(self):
             raise StopIteration
-        p = Page(self,
-                 self.reader.getPage(self.index),
-                 self.prefix,
-                 self.fill,
-                 self.start+self.index,
-                 self.area)
         self.index += 1
-        return p
+        return self.pages[self.index-1]
 
     def __str__(self):
         return "{begin} - {end}".format(begin=self.begin, end=self.end)
@@ -206,17 +217,17 @@ class Document(object):
             writer.write(out_file)
         return filename
 
-    def add_overlay(self, overlay, area):
+    def add_overlay(self, overlay):
         """
         Add an overlay to the page in addition to the bates stamp.
 
         Args:
-            overlay (Marisol.StaticOverlay):  Overlay to apply
-            area (Marisol.Area):  Area of the page to apply overlay to
+            overlay (Marisol.GenericTextOverlay):  Overlay to apply
 
         Raises:
             ValueError:  When area is already reserved for Bates Stamp
         """
+        area = overlay.area
         if isinstance(self.overlays[area], BatesOverlay):
             raise ValueError("Area {} is already reserved for bates stamp.".format(area))
         else:
@@ -224,21 +235,9 @@ class Document(object):
         return self
 
 
-class BatesOverlay(object):
-
-    def __init__(self):
-        pass
-
-
-class StaticOverlay(object):
-
-    def __init__(self, value):
-        self.value = value
-
-
 class Page(object):
 
-    def __init__(self, document, page, prefix, fill, start, area):
+    def __init__(self, document, page, prefix, fill, start):
         """
         Represents a page within a document that will be bates numbered.
 
@@ -248,35 +247,63 @@ class Page(object):
             prefix (str): Bates number prefix.
             fill (int): Length to zero-pad number to.
             start (int): Number to start with.
-            area (Area): Area on the page where the number should be drawn
         """
         self.document = document
         self.page = page
         self.prefix = prefix
         self.fill = fill
         self.start = start
-        self.area = area
 
-        self.height = self.page.mediaBox.upperRight[1]
-        self.width = self.page.mediaBox.lowerRight[0]
+        self.height = float(self.page.mediaBox.upperRight[1])
+        self.width = float(self.page.mediaBox.lowerRight[0])
+
+        self.canvas_file = io.BytesIO()
+        self.canvas = canvas.Canvas(self.canvas_file, pagesize=(self.width, self.height))
+
+        self.redactions = []
 
     def __str__(self):
         return self.number
 
+    def add_redaction(self, redaction):
+        """
+        Add a redaction to the page.
+
+        Args:
+            redaction (Marisol.Redaction):  Redaction to add to the page.
+        """
+        position = redaction.position
+        size = redaction.size
+        if position[0]+size[0] > self.width or position[1]+size[1] > self.height:
+            raise OutsideBoundariesError("Redaction with position {} and \
+            size {} is outside of page ({},{})".format(position, size, self.width, self.height))
+        self.redactions.append(redaction)
+        return self
+
     def apply(self):
         """
-        Applies the bates number overlay to the page
+        Applies all requested overlays to the page
 
         Returns:
             bool
         """
-        overlay = PageOverlay(self.size, self.number, self.area)
-        self.page.mergePage(overlay.page())
+        for overlay in self.document.overlays.values():
+            if isinstance(overlay, BatesOverlay):
+                overlay.text = self.number
+                overlay.apply(self.canvas)
+            elif isinstance(overlay, GenericTextOverlay):
+                overlay.apply(self.canvas)
 
-        for area, overlay in self.document.overlays.items():
-            if isinstance(overlay, StaticOverlay):
-                po = PageOverlay(self.size, overlay.value, area)
-                self.page.mergePage(po.page())
+        for redaction in self.redactions:
+            redaction.apply(self.canvas)
+
+        self.canvas.showPage()
+        self.canvas.save()
+
+        self.canvas_file.seek(0)
+        reader = PdfFileReader(self.canvas_file)
+        overlay_page = reader.getPage(0)
+        self.page.mergePage(overlay_page)
         return True
 
     @property
@@ -291,81 +318,100 @@ class Page(object):
         num = num.zfill(self.fill)
         return "{prefix}{num}".format(prefix=self.prefix, num=num)
 
-    @property
-    def size(self):
-        """
-        Takes the dimensions of the original page and returns the name and dimensions of the corresponding ReportLab
-        pagesize.
 
-        Returns:
-            tuple: name of the page size, and the dimensions (tuple)
-        """
-        dims = (float(self.width), float(self.height))
-        for name in dir(pagesizes):
-            size = getattr(pagesizes, name)
-            if isinstance(size, tuple):
-                if dims == size:
-                    return name, size
-        else:
-            return ValueError("Unknown page size.")
+class GenericTextOverlay(object):
 
-
-class PageOverlay(object):
-
-    def __init__(self, size, text, area):
-        """
-        Overlay that will be used to affix bates numbering
-
-        Args:
-            size (tuple): Size of the page as returned by Page.size()
-            text: text that will be overlaid on the page.
-            area (Area, optional): Area on the overlay where the number should be drawn; defaults to bottom right
-        """
-        self.size_name, self.size = size
+    def __init__(self, text, area):
         self.text = text
+        self.area = area
 
-        self.output = io.BytesIO()
-        self.c = canvas.Canvas(self.output, pagesize=self.size)
-
-        position_left, position_bottom = self.position(area)
-        self.c.drawString(position_left, position_bottom, self.text)
-
-        self.c.showPage()
-        self.c.save()
-
-    def page(self):
+    def apply(self, c):
         """
-        The page used to perform the overlay.
-
-        Returns:
-            PyPdf2.pdf.PageObject: The overlay page.
-        """
-        self.output.seek(0)
-        reader = PdfFileReader(self.output)
-        return reader.getPage(0)
-
-    def position(self, area):
-        """
-        Get the appropriate position on the page given an area.
+        Applies the bates number to a canvas.
 
         Args:
-            area (Area): Area on the overlay where the number should be drawn
+             c (canvas.Canvas): canvas to apply the overlay to
+        """
+        position_left, position_bottom = self.position(c)
+        c.drawString(position_left, position_bottom, self.text)
+
+    def position(self, c):
+        """
+        Get the appropriate position on the page for the current text given an area.
+
+        Args:
+            c (canvas.Canvas): Page to get the positioning for
 
         Returns:
             tuple: the position
         """
-        if area in [Area.TOP_LEFT, Area.TOP_RIGHT]:  # top
-            from_bottom = self.size[1]-15  # 15 down from height of page
-        elif area in [Area.BOTTOM_LEFT, Area.BOTTOM_RIGHT]:  # bottom
+        if self.area in [Area.TOP_LEFT, Area.TOP_RIGHT]:  # top
+            from_bottom = c._pagesize[1]-15  # 15 down from height of page
+        elif self.area in [Area.BOTTOM_LEFT, Area.BOTTOM_RIGHT]:  # bottom
             from_bottom = 15  # 15 up from bottom of page
-        else:
-            raise ValueError("Invalid area {}".format(area))
 
-        if area in [Area.TOP_LEFT, Area.BOTTOM_LEFT]:  # left
+        if self.area in [Area.TOP_LEFT, Area.BOTTOM_LEFT]:  # left
             from_left = 15
-        elif area in [Area.TOP_RIGHT, Area.BOTTOM_RIGHT]:  # right
+        elif self.area in [Area.TOP_RIGHT, Area.BOTTOM_RIGHT]:  # right
             offset = 15  # initial offset
-            offset += len(self.text) * 7  # offset for text length
-            from_left = self.size[0]-offset
+            offset += c.stringWidth(self.text)  # offset for text length
+            from_left = c._pagesize[0]-offset
 
         return from_left, from_bottom
+
+
+class BatesOverlay(GenericTextOverlay):
+    pass
+
+
+class StaticOverlay(GenericTextOverlay):
+    pass
+
+
+class Redaction(object):
+
+    def __init__(self, position, size, text=None, style=RedactionStyle.SOLID):
+        """
+
+        Args:
+            position (tuple): from-left and from-bottom position to draw redaction at in points
+            size (tuple): width and height of the redaction in points.
+            text (str):
+            style (Marisol.RedactionStyle):
+        """
+        self.position = position
+        self.size = size
+
+        # center of the drawn redaction (from-left, from-bottom)
+        self.center = (self.position[0]+self.size[0]/2,
+                       (self.position[1]+self.size[1]/2)-5.0)
+
+        self.text = text
+        self.style = style
+
+    def apply(self, c):
+        """
+        Apply the redaction to a canvas.
+
+        Args:
+            c (Canvas): canvas to apply the redaction to.
+        """
+        page_width = c._pagesize[0]
+        page_height = c._pagesize[1]
+
+        c.setFont("Helvetica", 10)
+
+        c.setStrokeColorRGB(*self.style.stroke)
+        c.setFillColorRGB(*self.style.fill)
+
+        c.rect(*self.position, *self.size, fill=1)
+
+        if self.text is not None:
+            c.setStrokeColorRGB(*self.style.text)
+            c.setFillColorRGB(*self.style.text)
+            c.drawCentredString(*self.center, self.text)
+
+
+class OutsideBoundariesError(ValueError):
+    """Raised when an item is drawn outside the page boundaries."""
+    pass

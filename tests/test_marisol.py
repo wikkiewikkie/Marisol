@@ -1,4 +1,4 @@
-from marisol import Area, Document, Marisol, PageOverlay, Page, StaticOverlay
+from marisol import Area, Document, Marisol, OutsideBoundariesError, Page, Redaction, RedactionStyle, StaticOverlay
 from PyPDF2.pdf import PageObject
 from tests.mocks import MockPDF
 
@@ -89,14 +89,14 @@ def test_marisol_save(populated):
 
 
 def test_document_add_overlay(document):
-    static = StaticOverlay("TESTLEGEND")
-    document.add_overlay(static, Area.BOTTOM_LEFT)
+    bl_overlay = StaticOverlay("TESTLEGEND", Area.BOTTOM_LEFT)
+    document.add_overlay(bl_overlay)
     assert isinstance(document.overlays[Area.BOTTOM_LEFT], StaticOverlay)
+    br_overlay = StaticOverlay("ANOTHER", Area.BOTTOM_RIGHT)
     with pytest.raises(ValueError):
-        document.add_overlay(static, Area.BOTTOM_RIGHT)  # conflicts with bates area
+        document.add_overlay(br_overlay)  # conflicts with bates area
     document.save("STATIC.pdf")
     os.remove("STATIC.pdf")
-
 
 
 def test_document_iteration(document):
@@ -129,14 +129,34 @@ def test_document_str(populated):
     assert str(doc) == "TEST000002 - TEST000004"  # second document has three pages
 
 
-def test_page_overlay(page):
-    o = PageOverlay(page.size, page.number, area=Area.BOTTOM_RIGHT)
-    assert isinstance(o.page(), PageObject)
-
-
 def test_page_str(page):
     assert str(page) == "TEST000003"
 
 
 def test_page_apply(page):
-    page.apply()
+    assert page.apply()
+
+
+def test_redaction_default(document):
+    p = document[0]
+    r = Redaction((100, 200),  (200, 200), "BLAH")
+    p.add_redaction(r)
+    document.save("redaction_default.pdf", overwrite=True)
+    os.remove("redaction_default.pdf")
+
+
+def test_redaction_error(document):
+    """Check that redactions drawn outside of dimensions raise an error"""
+    p = document[0]
+    r = Redaction((1000, 200),  (200, 200), "BLAH")
+
+    with pytest.raises(OutsideBoundariesError):
+        p.add_redaction(r)
+
+
+def test_redaction_styled(document):
+    p = document[0]
+    r = Redaction((100, 200), (200, 50), "TEST", RedactionStyle.OUTLINE)
+    p.add_redaction(r)
+    document.save("redaction_styled.pdf")
+    os.remove("redaction_styled.pdf")

@@ -1,6 +1,5 @@
-from .marisol import Area, BatesOverlay, Document, Marisol, PageOverlay, Page, StaticOverlay
-
-__all__ = ["Area", "BatesOverlay", "Document", "Marisol", "PageOverlay", "Page", "StaticOverlay"]
+from .marisol import Area, BatesOverlay, Document, Marisol, OutsideBoundariesError, Page, Redaction, RedactionStyle, \
+    StaticOverlay
 
 __author__ = "Kevin Schellenberg"
 __email__ = "wikkiewikkie@gmail.com"

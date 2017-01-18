@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/wikkiewikkie/Marisol.svg?branch=master)](https://travis-ci.org/wikkiewikkie/Marisol)
 [![codecov](https://codecov.io/gh/wikkiewikkie/Marisol/branch/master/graph/badge.svg)](https://codecov.io/gh/wikkiewikkie/Marisol)
 
-`Marisol` is a Python library that can be used to add bates numbers and static text stamps to existing PDF files.
+`Marisol` is a Python library that can be used to add bates numbers, static text, and redactions to existing PDF files.
 
 ## What's a Bates Number?
 
@@ -58,6 +58,32 @@ change between documents, it is applied at the document level using a `StaticOve
 
 These overlays may be applied to any of the defined areas, but each may contain only be one `StaticOverlay`.  A
 `StaticOverlay` can not occupy the same area as the bates number.
+
+### Redaction
+
+To draw a redaction on a page, you must first create a `Redaction` object and specify a location and size for it.  Then
+apply the redaction to a `Page` object using the `add_redaction()` method.  When creating the `Redaction` object, you
+may also include some text to draw inside the redaction box and a `RedactionStyle`.  If no text or style is specified,
+the redaction will be drawn as a solid black box with no text.
+
+```python
+>>> from marisol import Marisol, Redaction, RedactionStyle
+>>> m = Marisol("TEST", 6, 1)
+>>> m.append('myPdf.pdf')
+>>> doc = m[0]
+>>> first_page = doc[0]
+>>> location = (144, 216)  # offset from the left and bottom of the page.
+>>> size = (72, 36)  # width and height of the redaction
+>>> redaction = Redaction(location, size)  # create a plain redaction
+>>> first_page.add_redaction(redaction)  # add the redaction to the page
+>>> second_page = doc[1]
+>>> another_redaction = Redaction(location, size, "PRIVILEGED", RedactionStyle.OUTLINE) # with text and a style
+>>> second_page.add_redaction(another_redaction)
+```
+
+Page positions and dimensions are specified in points (1/72nd of an inch).  The example above draws a redaction where
+the bottom-left corner is 2 inches from the left of the page and 3 inches from the bottom of the page. It is one inch
+wide and 1/2 inches tall.
 
 ### Exporting
 
