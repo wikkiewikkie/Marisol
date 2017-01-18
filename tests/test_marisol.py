@@ -1,4 +1,4 @@
-from marisol import Area, Document, Marisol, Overlay, Page
+from marisol import Area, Document, Marisol, PageOverlay, Page, StaticOverlay
 from PyPDF2.pdf import PageObject
 from tests.mocks import MockPDF
 
@@ -84,6 +84,17 @@ def test_marisol_save(populated):
         os.remove(filename)
 
 
+def test_document_add_overlay(document):
+    static = StaticOverlay("TESTLEGEND")
+    document.add_overlay(static, Area.BOTTOM_LEFT)
+    assert isinstance(document.overlays[Area.BOTTOM_LEFT], StaticOverlay)
+    with pytest.raises(ValueError):
+        document.add_overlay(static, Area.BOTTOM_RIGHT)  # conflicts with bates area
+    document.save("STATIC.pdf")
+    os.remove("STATIC.pdf")
+
+
+
 def test_document_iteration(document):
     assert len(document) == 3  # document contains three pages
     count = 0
@@ -114,8 +125,8 @@ def test_document_str(populated):
     assert str(doc) == "TEST000002 - TEST000004"  # second document has three pages
 
 
-def test_overlay(page):
-    o = Overlay(page.size, page.number, area=Area.BOTTOM_RIGHT)
+def test_page_overlay(page):
+    o = PageOverlay(page.size, page.number, area=Area.BOTTOM_RIGHT)
     assert isinstance(o.page(), PageObject)
 
 

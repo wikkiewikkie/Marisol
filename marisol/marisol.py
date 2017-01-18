@@ -130,6 +130,9 @@ class Document(object):
         self.start = copy.copy(start)
         self.area = area
 
+        self.overlays = {x: None for x in Area}
+        self.overlays[area] = BatesOverlay()
+
         self.index = 0
 
     def __len__(self):
@@ -141,7 +144,8 @@ class Document(object):
     def __next__(self):
         if self.index >= len(self):
             raise StopIteration
-        p = Page(self.reader.getPage(self.index),
+        p = Page(self,
+                 self.reader.getPage(self.index),
                  self.prefix,
                  self.fill,
                  self.start+self.index,
@@ -203,20 +207,51 @@ class Document(object):
             writer.write(out_file)
         return filename
 
+    def add_overlay(self, overlay, area):
+        """
+        Add an overlay to the page in addition to the bates stamp.
+
+        Args:
+            overlay (Marisol.StaticOverlay):  Overlay to apply
+            area (Marisol.Area):  Area of the page to apply overlay to
+
+        Raises:
+            ValueError:  When area is already reserved for Bates Stamp
+        """
+        if isinstance(self.overlays[area], BatesOverlay):
+            raise ValueError("Area {} is already reserved for bates stamp.".format(area))
+        else:
+            self.overlays[area] = overlay
+        return self
+
+
+class BatesOverlay(object):
+
+    def __init__(self):
+        pass
+
+
+class StaticOverlay(object):
+
+    def __init__(self, value):
+        self.value = value
+
 
 class Page(object):
 
-    def __init__(self, page, prefix, fill, start, area):
+    def __init__(self, document, page, prefix, fill, start, area):
         """
         Represents a page within a document that will be bates numbered.
 
         Args:
+            document (Marisol.Document):  Parent document
             page (PyPdf2.pdf.PageObject): PDF page associated with this page
             prefix (str): Bates number prefix.
             fill (int): Length to zero-pad number to.
             start (int): Number to start with.
             area (Area): Area on the page where the number should be drawn
         """
+        self.document = document
         self.page = page
         self.prefix = prefix
         self.fill = fill
@@ -236,8 +271,13 @@ class Page(object):
         Returns:
             bool
         """
-        overlay = Overlay(self.size, self.number, self.area)
+        overlay = PageOverlay(self.size, self.number, self.area)
         self.page.mergePage(overlay.page())
+
+        for area, overlay in self.document.overlays.items():
+            if isinstance(overlay, StaticOverlay):
+                po = PageOverlay(self.size, overlay.value, area)
+                self.page.mergePage(po.page())
         return True
 
     @property
@@ -271,7 +311,7 @@ class Page(object):
             return ValueError("Unknown page size.")
 
 
-class Overlay(object):
+class PageOverlay(object):
 
     def __init__(self, size, text, area):
         """
