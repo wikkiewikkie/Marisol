@@ -56,6 +56,10 @@ def test_marisol_append(empty):
     os.remove("test.pdf")
 
 
+def test_marisol_getitem(populated):
+    assert isinstance(populated[0], Document)
+
+
 def test_marisol_iteration(populated):
     assert len(populated) == 3  # instance contains three documents
     count = 0

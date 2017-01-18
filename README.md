@@ -48,8 +48,11 @@ Static text overlays are used when you want to apply the same text to every page
 change between documents, it is applied at the document level using a `StaticOverlay`.
 
 ```python
+>>> from marisol import Area, Marisol
+>>> m = Marisol("TEST", 6, 1)
+>>> m.append('myPdf.pdf')
 >>> overlay = StaticOverlay("CONFIDENTIAL")
->>> doc = next(m)
+>>> doc = m[0]
 >>> doc.add_overlay(overlay, Area.BOTTOM_LEFT)
 ```
 

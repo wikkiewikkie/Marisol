@@ -41,6 +41,9 @@ class Marisol(object):
         self.documents = []
         self.overwrite = False
 
+    def __getitem__(self, item):
+        return self.documents[item]
+
     def __len__(self):
         return len(self.documents)
 
@@ -50,14 +53,8 @@ class Marisol(object):
     def __next__(self):
         if self.index >= len(self):
             raise StopIteration
-        d = Document(self.documents[self.index],
-                     self.prefix,
-                     self.fill,
-                     self.start+self.number,
-                     self.area)
         self.index += 1
-        self.number += len(d)
-        return d
+        return self.documents[self.index-1]
 
     def _save_document(self, document):
         """
@@ -86,7 +83,9 @@ class Marisol(object):
         Returns:
             marisol.Marisol: The current Marisol instance.
         """
-        self.documents.append(file)
+        d = Document(file, self.prefix, self.fill, self.start+self.number, self.area)
+        self.number += len(d)
+        self.documents.append(d)
         return self
 
     def save(self, overwrite=False, threads=multiprocessing.cpu_count()*6):
