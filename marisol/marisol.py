@@ -409,7 +409,7 @@ class Redaction(object):
         if self.text is not None:
             c.setStrokeColorRGB(*self.style.text)
             c.setFillColorRGB(*self.style.text)
-            c.drawCentredString(*self.center, self.text)
+            c.drawCentredString(self.center[0], self.center[1], self.text)
 
 
 class OutsideBoundariesError(ValueError):
