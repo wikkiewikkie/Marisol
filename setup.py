@@ -24,7 +24,7 @@ setup(
     license=marisol.__license__,
     author=marisol.__author__,
     author_email=marisol.__email__,
-    description='Add bates numbers to existing PDF files',
+    description='Add bates numbers, text stamps, and redactions to existing PDF files',
     packages=['marisol'],
     zip_safe=True,
     platforms='any',
