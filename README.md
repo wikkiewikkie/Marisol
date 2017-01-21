@@ -12,6 +12,16 @@ They are frequently used in the legal field when producing documents in connecti
 increment the number each time it was used.  These hand stamps were invented by Edwin G. *Bates* in 1891 and the name
 has stuck, even though the vast majority of these identifiers are now applied electronically.
 
+## Installation
+
+To install `Marisol`, simply:
+
+```
+pip install Marisol
+```
+
+`Marisol` requires the [pypdf2](https://github.com/mstamy2/PyPDF2) and [reportlab](https://pypi.python.org/pypi/reportlab) libraries, as well as any associated dependencies.
+
 ## Usage
 
 ```python
