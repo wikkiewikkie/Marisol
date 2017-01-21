@@ -404,7 +404,7 @@ class Redaction(object):
         c.setStrokeColorRGB(*self.style.stroke)
         c.setFillColorRGB(*self.style.fill)
 
-        c.rect(*self.position, *self.size, fill=1)
+        c.rect(*self.position+self.size, fill=1)
 
         if self.text is not None:
             c.setStrokeColorRGB(*self.style.text)
