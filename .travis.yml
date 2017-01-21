@@ -17,3 +17,12 @@ script: py.test --cov=marisol tests/
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: pypi
+  user: wikkiewikkie
+  password:
+    secure: h4oZz5QzBzyqfCeU/xq+AsEln9jAbbwvwsQbM4f6GxzbGqDgwAZ+wh1Q/73H+DqRGgayLrBhUNq5uvREDL7O7ggKmYt1ZsUsJRG+NmtaDjLSoqY97pmRQ/a3IalJHcxTjpsg/XLkmJtwKkxI/QiQ6E+BREpbsrO2K9Qm7/979C58eojwIiWS/+hHyOn/GUGRMQa54jOLXmnQ8hIzrTDaeCUG+2yuJ8ZArl+mVpGjySSFKeYnH37CUbBWUHJ3AFgHG0xIAJrIsGVCD05SP3pS5kWCH9GulyPq10HVqlXyIbneqVSohUp6jurAIbc5Ug8Hw6cq8zPZskrCNY/GIO58ovoatbBEU6ZO3vf+MGdrY4YrP1s63UuNw7DULQ12UsuhTubQiCKH20Ntm6TK66ac6vZ28ySlrwg/7ia21rPe+FuW5MbV3cjcx9hnCIlHbgk+feHu1ZQPETEyXfv/sNJM8v1krd5l4k+SUYwlFquLQDLUVOCIt3kOAzAKBwJYkHJgVqlrnBAjXWzOWtWEKAt05MxQVsfksb5tj2uQV1vG9oqEO/ddAd3de3+cqk2Dn+7Rh27bSTKxhxX/PCYrBgmA5YyIEXJPpyJr2LcDVj5Crzb8LeCKhLeJL6H7aFGZ2JfwAME6ksKXW4DIfZrf/Ab+loAj13W2HDahr8Yectpk4cs=
+  on:
+    tags: true
+  distributions: "sdist bdist_wheel"
