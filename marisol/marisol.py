@@ -20,6 +20,7 @@ class Area(Enum):
 class RedactionStyle(Enum):
     SOLID = ((0, 0, 0), (0, 0, 0), (1, 1, 1))
     OUTLINE = ((0, 0, 0), (1, 1, 1), (0, 0, 0))
+    WHITE = ((1, 1, 1), (1, 1, 1), (1, 1, 1))
 
     def __init__(self, stroke, fill, text):
         self.stroke = stroke
