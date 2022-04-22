@@ -13,7 +13,7 @@ import marisol
 from setuptools import setup
 
 install_requires = [
-    'pypdf2==1.26.0',
+    'pypdf2==1.27.5',
     'reportlab==3.3.0'
 ]
 
