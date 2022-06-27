@@ -14,7 +14,7 @@ from setuptools import setup
 
 install_requires = [
     'pypdf2==1.26.0',
-    'reportlab==3.3.0'
+    'reportlab==3.5.55'
 ]
 
 setup(
